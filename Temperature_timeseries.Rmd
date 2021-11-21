@@ -1,0 +1,103 @@
+---
+title: "Econometrics Lab"
+author: "Josmi Agnes Jose"
+date: "21/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r echo=FALSE, include=FALSE}
+library(ggplot2)
+library(tseries)
+library(ggplot2)
+library(tseries)
+library(tsibble)
+library(ggfortify)
+library(lubridate)
+library(feasts)
+library(dbplyr)
+library(tidyverse)
+library(imputeTS)
+
+```
+
+<font size="6" color="#700000"><div align="center">Minimum Daily Temperature Dataset </div></font>
+
+<br>
+
+<font size="4">
+This dataset describes the minimum daily temperatures over 10 years (1981-1990) in the city Melbourne, Australia.
+The units are in degrees Celsius and there are 3650 observations. The source of the data is credited as the Australian Bureau of Meteorology.
+```{r}
+data<-read.csv("D:/Projects/Akhil/temp_data.csv",stringsAsFactors = FALSE)
+head(data)
+```
+
+```{r}
+class(data)
+dim(data)
+```
+```{r}
+str(data)
+```
+
+
+```{r}
+data %>%
+  mutate(date = as_date(Date)) %>%
+  as_tsibble(index = date)-> my_tsbl
+
+str(my_tsbl)
+```
+
+
+
+```{r echo=FALSE}
+autoplot(my_tsbl,Temp)+labs(title="Daily temperature plot")
+```
+
+```{r echo=FALSE ,include=FALSE}
+
+has_gaps(my_tsbl, .full = TRUE)
+
+
+temp_gaps <- my_tsbl %>% 
+  count_gaps(.full = TRUE)
+temp_gaps
+
+temp_full <- my_tsbl %>% 
+  fill_gaps(.full = TRUE)
+
+temp_gaps <- temp_full %>% 
+  count_gaps(.full = TRUE)
+temp_gaps
+```
+
+```{r echo=FALSE, warning=FALSE}
+temp_full %>%
+  gg_season(Temp, labels = "both",period = "year")+ labs(title="Seasonal plot showing yearly seasonal patterns")
+```
+
+
+
+
+```{r echo=FALSE}
+temp_full %>%
+  gg_subseries(Temp,period = "week") +labs(title="Seasonal plot showing weekly seasonal patterns")
+```
+
+```{r echo=FALSE}
+temp_full %>%
+  ACF(Temp) %>%
+  autoplot() + labs(title="Autocorrelation function of daily temperature")
+```
+
+```{r echo=FALSE}
+dat<-ts(data[-1], frequency=7, start=c(1981,1,1), end = c(1990,12,31))
+trends<-decompose(dat, "multiplicative")
+plot(trends)
+```
